@@ -13,6 +13,8 @@ composer require ledc/think-worker
 
 ### GatewayWorker
 
+配置文件在`config/gateway_worker.php`
+
 在命令行启动GatewayWorker
 ~~~
 php think worker:gateway
@@ -22,10 +24,14 @@ php think worker:gateway
 
 ### 自定义进程或HttpServer
 
+配置文件在`config/workerman.php`
+
 在命令行启动服务端
 ~~~
 php think workerman
 ~~~
+
+
 
 然后就可以通过浏览器直接访问当前应用
 
