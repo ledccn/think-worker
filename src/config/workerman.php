@@ -34,7 +34,7 @@ return [
      * 进程配置
      */
     'process' => [
-        'websocket' => [
+        'http' => [
             //使能
             'enable' => true,
             //监听
@@ -43,11 +43,35 @@ return [
             'context' => [],
             //worker支持的属性
             'properties' => [
+                // 支持事件回调
+                // onWorkerStart
+                'onWorkerStart'  => function ($worker) {
 
+                },
+                // onWorkerReload
+                'onWorkerReload' => function ($worker) {
+
+                },
+                // onConnect
+                'onConnect'      => function ($connection) {
+
+                },
+                // onMessage
+                'onMessage'      => function ($connection, $data) {
+                    $connection->send('receive success');
+                },
+                // onClose
+                'onClose'        => function ($connection) {
+
+                },
+                // onError
+                'onError'        => function ($connection, $code, $msg) {
+                    echo "error [ $code ] $msg\n";
+                },
             ],
-            //子进程：handler类
+            //业务进程：handler类
             'handler' => '',
-            //子进程：handler类的构造函数参数
+            //业务进程：handler类的构造函数参数
             'constructor' => [],
         ],
     ],

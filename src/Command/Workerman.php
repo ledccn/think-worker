@@ -96,7 +96,7 @@ class Workerman extends Command
         }
 
         // 开启守护进程模式
-        if ($this->input->hasOption('daemon')) {
+        if ($input->hasOption('daemon')) {
             Worker::$daemonize = true;
         }
         $process = $workerman['process'];
