@@ -1,0 +1,36 @@
+{
+    "name": "ledc/think-worker",
+    "type": "library",
+    "license": "MIT",
+    "description": "workerman extend for thinkphp6.0",
+    "authors": [
+        {
+            "name": "david",
+            "email": "nz1985@qq.com"
+        }
+    ],
+    "require": {
+        "php": "^7.2|^8.0",
+        "ext-json": "*",
+        "ext-fileinfo": "*",
+        "workerman/workerman": "^4.0",
+        "workerman/gateway-worker": "^3.0",
+        "topthink/framework": "^6.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Ledc\\ThinkWorker\\": "src"
+        }
+    },
+    "extra": {
+        "think":{
+            "services":[
+                "Ledc\\ThinkWorker\\Service"
+            ],
+            "config":{
+                "workerman": "src/config/workerman.php",
+                "gateway_worker": "src/config/gateway_worker.php"
+            }
+        }
+    }
+}
