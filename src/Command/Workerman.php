@@ -89,7 +89,7 @@ class Workerman extends Command
         //HTTP服务
         $worker = new HttpServer($default);
         $worker->setRootPath(App::getRootPath());
-        $worker->setRoot(App::getRootPath() . 'public');
+        $worker->setPublicPath(App::getRootPath() . 'public');
 
         // 开启守护进程模式
         if ($input->hasOption('daemon')) {
