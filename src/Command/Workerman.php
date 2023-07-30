@@ -2,6 +2,7 @@
 
 namespace Ledc\ThinkWorker\Command;
 
+use Ledc\ThinkWorker\HttpServer;
 use Ledc\ThinkWorker\Process;
 use RuntimeException;
 use think\console\Command;
@@ -9,8 +10,8 @@ use think\console\Input;
 use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
+use think\facade\App;
 use think\facade\Config;
-use Workerman\Connection\TcpConnection;
 use Workerman\Worker;
 
 /**
@@ -83,22 +84,18 @@ class Workerman extends Command
 
         $logsDir = runtime_path('logs');
         static::createDir($logsDir);
-        Worker::$pidFile = $default['pid_file'] ?? '';
-        Worker::$stdoutFile = $default['stdout_file'] ?? '/dev/null';
-        Worker::$logFile = $default['log_file'] ?? '';
-        Worker::$eventLoopClass = $default['event_loop'] ?? '';
-        TcpConnection::$defaultMaxPackageSize = $default['max_package_size'] ?? 10 * 1024 * 1024;
-        if (property_exists(Worker::class, 'statusFile')) {
-            Worker::$statusFile = $default['status_file'] ?? '';
-        }
-        if (property_exists(Worker::class, 'stopTimeout')) {
-            Worker::$stopTimeout = $default['stop_timeout'] ?? 2;
-        }
+        Process::init($default);
+
+        //HTTP服务
+        $worker = new HttpServer($default);
+        $worker->setRootPath(App::getRootPath());
+        $worker->setRoot(App::getRootPath() . 'public');
 
         // 开启守护进程模式
         if ($input->hasOption('daemon')) {
             Worker::$daemonize = true;
         }
+
         $process = $workerman['process'];
         foreach ($process as $name => $config) {
             Process::start($name, $config);

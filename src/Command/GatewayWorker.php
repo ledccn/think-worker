@@ -9,7 +9,6 @@ use think\console\input\Argument;
 use think\console\input\Option;
 use think\console\Output;
 use think\facade\Config;
-use Workerman\Connection\TcpConnection;
 use Workerman\Worker;
 
 /**
@@ -54,26 +53,20 @@ class GatewayWorker extends Command
             $output->writeln('Starting GatewayWorker server...');
         }
 
+        $option = Config::get('gateway_worker');
+        $default = $option['default'];
+
         $logsDir = runtime_path('logs');
         Workerman::createDir($logsDir);
-        Worker::$pidFile = runtime_path() . 'gateway_worker.pid';
-        Worker::$stdoutFile = runtime_path() . 'logs/gateway_worker_stdout.log';
-        Worker::$logFile = runtime_path() . 'logs/gateway_worker.log';
-        TcpConnection::$defaultMaxPackageSize = 10 * 1024 * 1024;
-        if (property_exists(Worker::class, 'statusFile')) {
-            Worker::$statusFile = runtime_path() . 'gateway_worker.status';
-        }
-        if (property_exists(Worker::class, 'stopTimeout')) {
-            Worker::$stopTimeout = 2;
-        }
+        Process::init($default);
 
         // 开启守护进程模式
         if ($input->hasOption('daemon')) {
             Worker::$daemonize = true;
         }
 
-        $option = Config::get('gateway_worker');
-        foreach ($option as $name => $config) {
+        $process = $option['process'];
+        foreach ($process as $name => $config) {
             Process::start($name, $config);
         }
 

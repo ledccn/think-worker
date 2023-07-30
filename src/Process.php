@@ -3,6 +3,7 @@
 namespace Ledc\ThinkWorker;
 
 use think\Container;
+use Workerman\Connection\TcpConnection;
 use Workerman\Worker;
 
 /**
@@ -10,6 +11,48 @@ use Workerman\Worker;
  */
 class Process
 {
+    /**
+     * 初始化
+     * - 在主进程设置静态属性等
+     * @param array $config
+     * @return void
+     */
+    public static function init(array $config): void
+    {
+        ini_set('display_errors', 'on');
+        error_reporting(E_ALL);
+        if (isset($config['error_reporting'])) {
+            error_reporting($config['error_reporting']);
+        }
+        if ($timezone = $config['default_timezone'] ?? null) {
+            date_default_timezone_set($timezone);
+        }
+
+        Worker::$onMasterReload = function () {
+            if (function_exists('opcache_get_status')) {
+                if ($status = opcache_get_status()) {
+                    if (isset($status['scripts']) && $scripts = $status['scripts']) {
+                        foreach (array_keys($scripts) as $file) {
+                            opcache_invalidate($file, true);
+                        }
+                    }
+                }
+            }
+        };
+
+        Worker::$pidFile = $config['pid_file'] ?? '';
+        Worker::$stdoutFile = $config['stdout_file'] ?? '/dev/null';
+        Worker::$logFile = $config['log_file'] ?? '';
+        Worker::$eventLoopClass = $config['event_loop'] ?? '';
+        TcpConnection::$defaultMaxPackageSize = $config['max_package_size'] ?? 10 * 1024 * 1024;
+        if (property_exists(Worker::class, 'statusFile')) {
+            Worker::$statusFile = $config['status_file'] ?? '';
+        }
+        if (property_exists(Worker::class, 'stopTimeout')) {
+            Worker::$stopTimeout = $config['stop_timeout'] ?? 2;
+        }
+    }
+
     /**
      * 启动Worker容器实例
      * @param string $name 进程名称(实例名称)

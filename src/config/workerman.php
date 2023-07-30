@@ -11,7 +11,7 @@ return [
          * 服务监听配置
          */
         // 协议 支持 tcp udp unix http websocket text
-        'listen' => 'http://0.0.0.0:8787',
+        'listen' => 'http://0.0.0.0:2346',
         'transport' => 'tcp',
         'context' => [],
         'name' => 'workerman',
@@ -19,6 +19,9 @@ return [
         'user' => '',
         'group' => '',
         'reusePort' => false,
+        //PHP配置
+        'error_reporting' => E_ALL,
+        'default_timezone' => 'Asia/Shanghai',
         /**
          * 主进程配置
          */
@@ -34,11 +37,11 @@ return [
      * 进程配置
      */
     'process' => [
-        'http' => [
+        'websocket' => [
             //使能
             'enable' => true,
             //监听
-            'listen' => 'http://0.0.0.0:8787',
+            'listen' => 'websocket://0.0.0.0:2345',
             //上下文
             'context' => [],
             //worker支持的属性

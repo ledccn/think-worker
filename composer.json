@@ -13,6 +13,8 @@
         "php": "^7.2|^8.0",
         "ext-json": "*",
         "ext-fileinfo": "*",
+        "ext-posix": "*",
+        "ext-pcntl": "*",
         "workerman/workerman": "^4.0",
         "workerman/gateway-worker": "^3.0",
         "topthink/framework": "^6.0"
