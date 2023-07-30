@@ -77,6 +77,8 @@ class Application extends App
             self::send($connection, $_response, $request);
         } catch (HttpException|Exception|Throwable $e) {
             $this->exception($connection, $request, $e);
+        } finally {
+            Context::destroy();
         }
         return null;
     }
