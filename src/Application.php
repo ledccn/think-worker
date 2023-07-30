@@ -173,6 +173,7 @@ class Application extends App
                 if (!method_exists($data, '__toString')) {
                     return 'Object';
                 }
+                //no break
             default:
                 return (string)$data;
         }
