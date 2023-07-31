@@ -2,12 +2,14 @@
 
 namespace Ledc\ThinkWorker;
 
+use Closure;
 use Exception;
 use Ledc\ThinkWorker\Http\Request;
 use Ledc\ThinkWorker\Http\Response;
 use think\App;
 use think\exception\Handle;
 use think\exception\HttpException;
+use think\facade\Config;
 use Throwable;
 use Workerman\Connection\TcpConnection;
 use Workerman\Protocols\Http;
@@ -49,6 +51,15 @@ class Application extends App
             $resp = new Response();
             Context::set(Request::class, $request);
             Context::set(Response::class, $resp);
+            $path = $request->path();
+            $key = $request->method() . $path;
+            if (
+                static::unsafeUri($connection, $path, $request) ||
+                static::findFile($connection, $path, $key, $request)
+            ) {
+                return null;
+            }
+
             $this->adapter($connection, $request);
 
             $this->beginTime = microtime(true);
@@ -75,6 +86,97 @@ class Application extends App
             static::destory();
         }
         return null;
+    }
+
+    /**
+     * Find File.
+     * @param TcpConnection $connection
+     * @param string $path
+     * @param string $key
+     * @param Request|mixed $request
+     * @return bool
+     */
+    protected static function findFile(TcpConnection $connection, string $path, string $key, $request): bool
+    {
+        if (preg_match('/%[0-9a-f]{2}/i', $path)) {
+            $path = urldecode($path);
+            if (static::unsafeUri($connection, $path, $request)) {
+                return true;
+            }
+        }
+
+        $publicDir = app()->getRootPath() . 'public';
+        $file = "$publicDir/$path";
+        if (!is_file($file)) {
+            return false;
+        }
+
+        if (pathinfo($file, PATHINFO_EXTENSION) === 'php') {
+            if (!static::config('default.support_php_files', false)) {
+                return false;
+            }
+            static::send($connection, static::execPhpFile($file), $request);
+            return true;
+        }
+
+        if (!static::config('default.support_static', false)) {
+            return false;
+        }
+        $callback = function ($request) use ($file) {
+            clearstatcache(true, $file);
+            return (new Response())->file($file);
+        };
+        static::send($connection, $callback($request), $request);
+        return true;
+    }
+
+    /**
+     * UnsafeUri.
+     * @param TcpConnection $connection
+     * @param string $path
+     * @param Request|mixed $request
+     * @return bool
+     */
+    protected static function unsafeUri(TcpConnection $connection, string $path, Request $request): bool
+    {
+        if (
+            !$path ||
+            strpos($path, '..') !== false ||
+            strpos($path, "\\") !== false ||
+            strpos($path, "\0") !== false
+        ) {
+            $callback = static::getFallback();
+            static::send($connection, $callback($request), $request);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Config.
+     * @param string $key
+     * @param mixed $default
+     * @return array|mixed|null
+     */
+    protected static function config(string $key, $default = null)
+    {
+        return Config::get('workerman.' . $key, $default);
+    }
+
+    /**
+     * GetFallback.
+     * @return Closure
+     */
+    protected static function getFallback(): Closure
+    {
+        return function () {
+            try {
+                $notFoundContent = file_get_contents(public_path() . '404.html');
+            } catch (Throwable $e) {
+                $notFoundContent = '404 Not Found';
+            }
+            return new Response(404, [], $notFoundContent);
+        };
     }
 
     /**

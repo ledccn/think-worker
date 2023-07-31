@@ -19,8 +19,13 @@ return [
         'user' => '',
         'group' => '',
         'reusePort' => false,
-        //PHP配置
+        //支持PHP文件
+        'support_php_files' => false,
+        //支持静态文件
+        'support_static' => true,
+        //错误报告
         'error_reporting' => E_ALL,
+        //时区
         'default_timezone' => 'Asia/Shanghai',
         /**
          * 主进程配置

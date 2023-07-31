@@ -14,11 +14,6 @@ class HttpServer
      * @var string
      */
     protected $rootPath = '';
-    /**
-     * 网站目录
-     * @var string
-     */
-    protected $publicPath = '';
 
     /**
      * 架构函数
@@ -59,15 +54,5 @@ class HttpServer
     public function setRootPath(string $path)
     {
         $this->rootPath = $path;
-    }
-
-    /**
-     * 设置网站目录
-     * @param string $publicPath
-     * @return void
-     */
-    public function setPublicPath(string $publicPath)
-    {
-        $this->publicPath = $publicPath;
     }
 }

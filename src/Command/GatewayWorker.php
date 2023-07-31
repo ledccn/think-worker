@@ -56,8 +56,7 @@ class GatewayWorker extends Command
         $option = Config::get('gateway_worker');
         $default = $option['default'];
 
-        $logsDir = runtime_path('logs');
-        Workerman::createDir($logsDir);
+        Workerman::createDir(runtime_path('logs'));
         Process::init($default);
 
         // 开启守护进程模式

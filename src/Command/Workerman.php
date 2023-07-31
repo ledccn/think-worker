@@ -82,14 +82,12 @@ class Workerman extends Command
         $workerman = Config::get('workerman');
         $default = $workerman['default'];
 
-        $logsDir = runtime_path('logs');
-        static::createDir($logsDir);
+        static::createDir(runtime_path('logs'));
         Process::init($default);
 
         //HTTP服务
         $worker = new HttpServer($default);
         $worker->setRootPath(App::getRootPath());
-        $worker->setPublicPath(App::getRootPath() . 'public');
 
         // 开启守护进程模式
         if ($input->hasOption('daemon')) {
