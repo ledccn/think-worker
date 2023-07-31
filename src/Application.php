@@ -46,7 +46,9 @@ class Application extends App
     public function onMessage($connection, $request)
     {
         try {
+            $resp = new Response();
             Context::set(Request::class, $request);
+            Context::set(Response::class, $resp);
             $this->adapter($connection, $request);
 
             $this->beginTime = microtime(true);
@@ -65,23 +67,23 @@ class Application extends App
             $this->http->end($response);
             $content .= ob_get_clean() ?: '';
 
-            $resp = new Response($response->getCode(), $response->getHeader(), $content);
+            $resp->withStatus($response->getCode())->withHeaders($response->getHeader())->withBody($content);
             self::send($connection, $resp, $request);
         } catch (HttpException|Exception|Throwable $e) {
-            $this->exception($connection, $request, $e);
+            $this->exception($connection, $resp, $request, $e);
         } finally {
-            Context::destroy();
+            static::destory();
         }
         return null;
     }
 
     /**
      * 适配器
-     * @param TcpConnection $connection
-     * @param Request $request
+     * @param TcpConnection|mixed $connection
+     * @param Request|mixed $request
      * @return void
      */
-    protected function adapter($connection, Request $request): void
+    protected function adapter(TcpConnection $connection, Request $request): void
     {
         // Init.
         $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES = [];
@@ -105,7 +107,7 @@ class Application extends App
             'HTTP_CONNECTION' => '',
             'CONTENT_TYPE' => $request->header('CONTENT-TYPE', ''),
             'QUERY_STRING' => $request->queryString(),
-            //'CONTENT_LENGTH' => $request->header(strtolower('CONTENT_LENGTH'), ''),
+            'CONTENT_LENGTH' => $request->header('CONTENT-LENGTH', ''),
         ];
 
         $_GET = $request->get();
@@ -115,24 +117,29 @@ class Application extends App
     }
 
     /**
-     * @param $connection
-     * @param $request
-     * @param $e
+     * @param TcpConnection|mixed $connection
+     * @param Response|mixed $resp
+     * @param Request|mixed $request
+     * @param Throwable $e
      * @return void
      */
-    protected function exception($connection, $request, $e)
+    protected function exception(TcpConnection $connection, Response $resp, Request $request, Throwable $e)
     {
-        if ($e instanceof Exception) {
-            $handler = $this->make(Handle::class);
-            $handler->report($e);
+        try {
+            if ($e instanceof Exception) {
+                $handler = $this->make(Handle::class);
+                $handler->report($e);
 
-            $response = $handler->render($this->request, $e);
-            $resp = new Response($response->getCode(), [], $response->getContent());
-        } else {
-            $resp = new Response(500, [], $e->getMessage());
+                $response = $handler->render($this->request, $e);
+                $resp->withStatus($response->getCode())->withHeaders($response->getHeader())->withBody($response->getContent());
+            } else {
+                $resp = new Response(500, [], $e->getMessage());
+            }
+
+            static::send($connection, $resp, $request);
+        } catch (Throwable $throwable) {
+            static::destory();
         }
-
-        static::send($connection, $resp, $request);
     }
 
     /**
@@ -143,6 +150,7 @@ class Application extends App
     {
         Context::destroy();
         $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES = [];
+        $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $GLOBALS['HTTP_RAW_POST_DATA'] = '';
     }
 
     /**
@@ -151,6 +159,14 @@ class Application extends App
     public static function request(): Request
     {
         return Context::get(Request::class);
+    }
+
+    /**
+     * @return Response
+     */
+    public static function response(): Response
+    {
+        return Context::get(Response::class);
     }
 
     /**
@@ -171,7 +187,6 @@ class Application extends App
     protected static function send($connection, $response, $request)
     {
         $keepAlive = $request->header('connection');
-        static::destory();
         if (($keepAlive === null && $request->protocolVersion() === '1.1')
             || $keepAlive === 'keep-alive' || $keepAlive === 'Keep-Alive'
         ) {
