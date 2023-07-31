@@ -47,19 +47,11 @@ class Application extends App
     {
         try {
             Context::set(Request::class, $request);
-            $uri = $request->uri();
-            $body = $request->rawBody();
+            $this->adapter($connection, $request);
 
             $this->beginTime = microtime(true);
             $this->beginMem  = memory_get_usage();
             $this->db->clearQueryTimes();
-
-            $pathinfo = ltrim(strpos($uri, '?') ? strstr($uri, '?', true) : $uri, '/');
-
-            $this->request
-                ->setPathinfo($pathinfo)
-                ->withInput($body);
-
             while (ob_get_level() > 1) {
                 ob_end_clean();
             }
@@ -84,6 +76,45 @@ class Application extends App
     }
 
     /**
+     * 适配器
+     * @param TcpConnection $connection
+     * @param Request $request
+     * @return void
+     */
+    protected function adapter(TcpConnection $connection, Request $request): void
+    {
+        // Init.
+        $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES = [];
+        // $_SERVER
+        $_SERVER = [
+            'REQUEST_METHOD' => $request->method(),
+            'REQUEST_URI' => $request->uri(),
+            'SERVER_PROTOCOL' => $request->protocolVersion(),
+            'SERVER_ADDR' => $connection->getLocalIp(),
+            'SERVER_PORT' => $connection->getLocalPort(),
+            'REMOTE_ADDR' => $connection->getRemoteIp(),
+            'REMOTE_PORT' => $connection->getRemotePort(),
+            'SERVER_SOFTWARE' => 'workerman',
+            'SERVER_NAME' => $request->host(),
+            'HTTP_HOST' => $request->host(),
+            'HTTP_USER_AGENT' => $request->header(strtolower('HTTP_USER_AGENT'), ''),
+            'HTTP_ACCEPT' => $request->header(strtolower('HTTP_ACCEPT'), ''),
+            'HTTP_ACCEPT_LANGUAGE' => '',
+            'HTTP_ACCEPT_ENCODING' => '',
+            'HTTP_COOKIE' => $request->cookie(),
+            'HTTP_CONNECTION' => '',
+            'CONTENT_TYPE' => $request->header(strtolower('CONTENT_TYPE'), ''),
+            'QUERY_STRING' => $request->queryString(),
+            //'CONTENT_LENGTH' => $request->header(strtolower('CONTENT_LENGTH'), ''),
+        ];
+
+        $_GET = $request->get();
+        $_POST = $request->post();
+        $_REQUEST = $_POST + $_GET;
+        $GLOBALS['HTTP_RAW_REQUEST_DATA'] = $GLOBALS['HTTP_RAW_POST_DATA'] = $request->rawBody();
+    }
+
+    /**
      * @param $connection
      * @param $request
      * @param $e
@@ -102,6 +133,16 @@ class Application extends App
         }
 
         static::send($connection, $response, $request);
+    }
+
+    /**
+     * 清理环境
+     * @return void
+     */
+    protected static function destory(): void
+    {
+        Context::destroy();
+        $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES = [];
     }
 
     /**
@@ -130,7 +171,7 @@ class Application extends App
     protected static function send($connection, $response, $request)
     {
         $keepAlive = $request->header('connection');
-        Context::destroy();
+        static::destory();
         if (($keepAlive === null && $request->protocolVersion() === '1.1')
             || $keepAlive === 'keep-alive' || $keepAlive === 'Keep-Alive'
         ) {
