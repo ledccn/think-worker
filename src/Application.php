@@ -50,7 +50,7 @@ class Application extends App
             $this->adapter($connection, $request);
 
             $this->beginTime = microtime(true);
-            $this->beginMem  = memory_get_usage();
+            $this->beginMem = memory_get_usage();
             $this->db->clearQueryTimes();
             while (ob_get_level() > 1) {
                 ob_end_clean();
@@ -58,15 +58,15 @@ class Application extends App
 
             ob_start();
             $response = $this->http->run();
-            $content  = ob_get_clean();
+            $content = ob_get_clean();
 
             ob_start();
             $response->send();
             $this->http->end($response);
             $content .= ob_get_clean() ?: '';
 
-            $_response = new Response($response->getCode(), $response->getHeader(), $content);
-            self::send($connection, $_response, $request);
+            $resp = new Response($response->getCode(), $response->getHeader(), $content);
+            self::send($connection, $resp, $request);
         } catch (HttpException|Exception|Throwable $e) {
             $this->exception($connection, $request, $e);
         } finally {
@@ -81,7 +81,7 @@ class Application extends App
      * @param Request $request
      * @return void
      */
-    protected function adapter(TcpConnection $connection, Request $request): void
+    protected function adapter($connection, Request $request): void
     {
         // Init.
         $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES = [];
@@ -126,13 +126,13 @@ class Application extends App
             $handler = $this->make(Handle::class);
             $handler->report($e);
 
-            $resp    = $handler->render($this->request, $e);
-            $response = new Response($resp->getCode(), [], $resp->getContent());
+            $response = $handler->render($this->request, $e);
+            $resp = new Response($response->getCode(), [], $response->getContent());
         } else {
-            $response = new Response(500, [], $e->getMessage());
+            $resp = new Response(500, [], $e->getMessage());
         }
 
-        static::send($connection, $response, $request);
+        static::send($connection, $resp, $request);
     }
 
     /**
@@ -207,7 +207,7 @@ class Application extends App
         $type = gettype($data);
         switch ($type) {
             case 'boolean':
-                return  $data ? 'true' : 'false';
+                return $data ? 'true' : 'false';
             case 'NULL':
                 return 'NULL';
             case 'array':
@@ -216,7 +216,7 @@ class Application extends App
                 if (!method_exists($data, '__toString')) {
                     return 'Object';
                 }
-                //no break
+            //no break
             default:
                 return (string)$data;
         }

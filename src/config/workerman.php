@@ -74,7 +74,7 @@ return [
             'properties' => [
                 // 支持事件回调
                 // onWorkerStart
-                'onWorkerStart'  => function ($worker) {
+                'onWorkerStart' => function ($worker) {
 
                 },
                 // onWorkerReload
@@ -82,19 +82,19 @@ return [
 
                 },
                 // onConnect
-                'onConnect'      => function ($connection) {
+                'onConnect' => function ($connection) {
 
                 },
                 // onMessage
-                'onMessage'      => function ($connection, $data) {
+                'onMessage' => function ($connection, $data) {
                     $connection->send('receive success');
                 },
                 // onClose
-                'onClose'        => function ($connection) {
+                'onClose' => function ($connection) {
 
                 },
                 // onError
-                'onError'        => function ($connection, $code, $msg) {
+                'onError' => function ($connection, $code, $msg) {
                     echo "error [ $code ] $msg\n";
                 },
             ],
