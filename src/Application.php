@@ -47,10 +47,10 @@ class Application extends App
      */
     public function onMessage($connection, $request)
     {
+        $resp = new Response();
+        Context::set(Request::class, $request);
+        Context::set(Response::class, $resp);
         try {
-            $resp = new Response();
-            Context::set(Request::class, $request);
-            Context::set(Response::class, $resp);
             $path = $request->path();
             $key = $request->method() . $path;
             if (
