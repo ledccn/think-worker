@@ -83,7 +83,7 @@ class Application extends App
         } catch (HttpException|Exception|Throwable $e) {
             $this->exception($connection, $resp, $request, $e);
         } finally {
-            static::destory();
+            static::destroy();
         }
         return null;
     }
@@ -240,7 +240,7 @@ class Application extends App
 
             static::send($connection, $resp, $request);
         } catch (Throwable $throwable) {
-            static::destory();
+            static::destroy();
         }
     }
 
@@ -248,7 +248,7 @@ class Application extends App
      * 清理环境
      * @return void
      */
-    protected static function destory(): void
+    protected static function destroy(): void
     {
         Context::destroy();
         $_POST = $_GET = $_COOKIE = $_REQUEST = $_SESSION = $_FILES = [];
